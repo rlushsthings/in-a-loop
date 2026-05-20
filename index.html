@@ -110,7 +110,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .back-btn.reveal { opacity: 0.5; transform: translateY(0); }
 .back-btn:hover { opacity: 0.9; }
 
-/* פאנל ה-About בדסקטופ */
+/* פאנל ה-About בדסקטופ - מיקום דיפולטי למטה */
 .vibe-info-trigger {
     position: absolute; bottom: 0; left: 0; width: 100vw; height: 50px; z-index: 999; display: none;
 }
@@ -119,7 +119,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .about-label {
     position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
     color: var(--purp); font-family: 'Instrument Serif'; font-style: italic;
-    font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease; pointer-events: none;
+    font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease, color 0.3s ease, top 0.3s ease; pointer-events: none;
 }
 .vibe-info-trigger.open .about-label { opacity: 0; }
 
@@ -137,18 +137,38 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .vibe-info-trigger:hover .vibe-info-popup, .vibe-info-trigger.open .vibe-info-popup { transform: translateY(0); }
 .vibe-info-trigger:hover .about-label { opacity: 0; }
 
-/* רספונסיביות מובייל */
-@media (max-width: 768px) {
+/* ================================================================ */
+/* התאמה גלובלית מוחלטת לכל סוגי האייפדים, הטאבלטים והמובייל (מתחת ל-1024px) */
+/* ================================================================ */
+@media (max-width: 1024px) {
     html, body { cursor: default; } 
     .custom-cursor { display: none; } 
     
-    .vibe-info-trigger { height: 75px; } 
-    .about-label { bottom: 25px; font-size: 1.25rem; opacity: 0.4; }
-    
-    .vibe-info-popup {
-        padding: 2.5rem 1.8rem; 
-        font-size: 1.25rem; 
+    /* הקפצת כל אזור הטריגר לחלק העליון של המסך כדי שיונח על הגרדיאנט הכתום */
+    .vibe-info-trigger {
+        top: 0; bottom: auto; height: 8vh;
     }
+    
+    /* הצבת המילה about בראש העמוד, וצביעתה בצבע כהה קריא מעל הפס הכתום */
+    .about-label {
+        top: 2.5vh; bottom: auto;
+        color: var(--night); opacity: 0.5; font-size: 1.3rem;
+    }
+    
+    /* היפוך האנימציה: באייפד ומטה המגירה מחליקה מלמעלה כלפי מטה */
+    .vibe-info-popup {
+        top: 0; bottom: auto;
+        transform: translateY(-100%); /* מוחבא מעל גבולות המסך העליונים */
+        padding: 3.5rem 2rem 2.5rem 2rem; 
+        font-size: 1.3rem; 
+        background: linear-gradient(180deg, rgba(9, 15, 45, 0.99) 0%, rgba(42, 37, 96, 0.97) 100%);
+        border-top: none;
+        border-bottom: 1px solid rgba(147, 165, 255, 0.15);
+    }
+    
+    /* מניעת פתיחה בטעות ב-hover, והפעלת טוגל נקי בלחיצה בלבד */
+    .vibe-info-trigger:hover .vibe-info-popup { transform: translateY(-100%); }
+    .vibe-info-trigger.open .vibe-info-popup { transform: translateY(0); }
 }
 
 .custom-cursor {
@@ -394,36 +414,24 @@ function openShades(hex, colorKey) {
 
 function applyMood(moodKey) { currentMapping = MOOD_MAP[moodKey]; finishSearch(); }
 
-// החזרת פונקציית שליפת העטיפות היציבה והמהירה לגרסה שעבדה בצורה מוחלטת
 async function fetchCover(n, a) {
     const typeStr = currentSelection ? currentSelection.toLowerCase() : 'song';
-    
-    if (typeStr === 'artist') {
-        const cleanArtistName = String(n).toLowerCase().trim();
-        if (ARTIST_COVERS[cleanArtistName]) return ARTIST_COVERS[cleanArtistName];
-    }
-
     try {
         let entityType = 'song';
         let termQuery = encodeURIComponent(`${n} ${a}`);
-        
         if (typeStr === 'album') {
             entityType = 'album';
         } else if (typeStr === 'artist') {
             entityType = 'song';
             termQuery = encodeURIComponent(n); 
         }
-        
         const res = await fetch(`https://itunes.apple.com/search?term=${termQuery}&limit=1&entity=${entityType}`);
         const d = await res.json();
-        
         if (d.results && d.results[0]) {
             let url = d.results[0].artworkUrl100 || d.results[0].artworkUrl60;
             return url ? url.replace('100x100bb', '600x600bb').replace('60x60bb', '600x600bb') : null;
         }
-    } catch {
-        return null;
-    }
+    } catch { return null; }
     return null;
 }
 
