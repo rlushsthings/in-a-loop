@@ -110,7 +110,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .back-btn.reveal { opacity: 0.5; transform: translateY(0); }
 .back-btn:hover { opacity: 0.9; }
 
-/* פאנל ה-About: במצב ברירת מחדל (דסקטופ) הוא יושב ומחליק מלמטה למעלה */
+/* פאנל ה-About בדסקטופ */
 .vibe-info-trigger {
     position: absolute; bottom: 0; left: 0; width: 100vw; height: 50px; z-index: 999; display: none;
 }
@@ -119,7 +119,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .about-label {
     position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
     color: var(--purp); font-family: 'Instrument Serif'; font-style: italic;
-    font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease, color 0.3s ease; pointer-events: none;
+    font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease; pointer-events: none;
 }
 .vibe-info-trigger.open .about-label { opacity: 0; }
 
@@ -134,42 +134,21 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 }
 .vibe-info-text { max-width: 800px; margin: 0 auto; }
 
-/* דסקטופ Hover */
 .vibe-info-trigger:hover .vibe-info-popup, .vibe-info-trigger.open .vibe-info-popup { transform: translateY(0); }
 .vibe-info-trigger:hover .about-label { opacity: 0; }
 
-/* ========================================== */
-/* שדרוג מטורף ורספונסיבי לחלוטין למובייל */
-/* ========================================== */
+/* רספונסיביות מובייל */
 @media (max-width: 768px) {
     html, body { cursor: default; } 
     .custom-cursor { display: none; } 
     
-    /* העברת כל אזור הטריגר לחלק העליון של המסך (על פני השטח הכתום) */
-    .vibe-info-trigger {
-        top: 0; bottom: auto; height: 10vh;
-    }
+    .vibe-info-trigger { height: 75px; } 
+    .about-label { bottom: 25px; font-size: 1.25rem; opacity: 0.4; }
     
-    /* מיקום המילה about בול במרכז הפס הכתום העליון, ושינוי צבע לכהה כדי שייקרא מושלם על הכתום */
-    .about-label {
-        top: 3.5vh; bottom: auto;
-        color: var(--night); opacity: 0.6; font-size: 1.3rem;
-    }
-    
-    /* הפיכת כיוון האנימציה: במובייל המגירה תחליק מלמעלה למטה! */
     .vibe-info-popup {
-        top: 0; bottom: auto;
-        transform: translateY(-100%); /* החלקה מחוץ למסך העליון */
-        padding: 3.5rem 1.8rem 2.5rem 1.8rem; 
+        padding: 2.5rem 1.8rem; 
         font-size: 1.25rem; 
-        background: linear-gradient(180deg, rgba(9, 15, 45, 0.99) 0%, rgba(42, 37, 96, 0.97) 100%);
-        border-top: none;
-        border-bottom: 1px solid rgba(147, 165, 255, 0.15);
     }
-    
-    /* הפעלה חלקה בלחיצה במובייל כלפי מטה */
-    .vibe-info-trigger:hover .vibe-info-popup { transform: translateY(-100%); } /* מבטל את ה-hover של דסקטופ */
-    .vibe-info-trigger.open .vibe-info-popup { transform: translateY(0); }
 }
 
 .custom-cursor {
@@ -278,6 +257,22 @@ let currentMapping = { e: 0.5, v: 0.5, ac: 0.5, loudness: -8, genre: "", female:
 let historyLog = []; 
 let introTimers = []; 
 let introSkipped = false;
+
+// מאגר תמונות קשיח ומאובטח לאמנים
+const ARTIST_COVERS = {
+    "claudio monteverdi": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop",
+    "robert schumann": "https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=600&auto=format&fit=crop",
+    "miles davis": "https://images.unsplash.com/photo-1487180142328-0c4e37023af5?q=80&w=600&auto=format&fit=crop",
+    "john coltrane": "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=600&auto=format&fit=crop",
+    "radiohead": "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600&auto=format&fit=crop",
+    "the smiths": "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=600&auto=format&fit=crop",
+    "aphex twin": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop",
+    "brian eno": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=600&auto=format&fit=crop",
+    "david bowie": "https://images.unsplash.com/photo-1526478806334-5fa488a38b1d?q=80&w=600&auto=format&fit=crop",
+    "bjork": "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop",
+    "cocteau twins": "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop",
+    "sonic youth": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=600&auto=format&fit=crop"
+};
 
 function toggleMobileAbout(event) {
     event.stopPropagation();
@@ -399,24 +394,36 @@ function openShades(hex, colorKey) {
 
 function applyMood(moodKey) { currentMapping = MOOD_MAP[moodKey]; finishSearch(); }
 
+// החזרת פונקציית שליפת העטיפות היציבה והמהירה לגרסה שעבדה בצורה מוחלטת
 async function fetchCover(n, a) {
     const typeStr = currentSelection ? currentSelection.toLowerCase() : 'song';
+    
+    if (typeStr === 'artist') {
+        const cleanArtistName = String(n).toLowerCase().trim();
+        if (ARTIST_COVERS[cleanArtistName]) return ARTIST_COVERS[cleanArtistName];
+    }
+
     try {
         let entityType = 'song';
         let termQuery = encodeURIComponent(`${n} ${a}`);
+        
         if (typeStr === 'album') {
             entityType = 'album';
         } else if (typeStr === 'artist') {
             entityType = 'song';
             termQuery = encodeURIComponent(n); 
         }
+        
         const res = await fetch(`https://itunes.apple.com/search?term=${termQuery}&limit=1&entity=${entityType}`);
         const d = await res.json();
+        
         if (d.results && d.results[0]) {
             let url = d.results[0].artworkUrl100 || d.results[0].artworkUrl60;
             return url ? url.replace('100x100bb', '600x600bb').replace('60x60bb', '600x600bb') : null;
         }
-    } catch { return null; }
+    } catch {
+        return null;
+    }
     return null;
 }
 
