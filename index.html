@@ -22,9 +22,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   position: absolute; inset: 0; z-index: 2;
   display: flex; flex-direction: column; justify-content: center;
   padding: 0 8vw; gap: 0.1rem; pointer-events: none;
-  transition: opacity 0.5s ease, transform 0.5s ease; /* אפקט העלמה חלק */
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
-/* קלאס להעלמת הטקסט המקורי לחלוטין כשהמסך השני עולה */
 .text-lines.fade-out { opacity: 0; transform: translateY(-20px); }
 
 .line {
@@ -47,7 +46,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   z-index: 5;
   transition: transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding-top: 14vh; /* כיוונון עדין למרחב העליון החדש */
+  padding-top: 14vh;
 }
 .arch-panel.risen { transform: translateX(-50%) translateY(5vh); }
 
@@ -103,7 +102,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 #result-title { font-size: 2rem; font-style: italic; margin-bottom: 0.2rem; line-height: 1.1; }
 #result-artist { font-size: 1.2rem; opacity: 0.7; font-style: italic; }
 
-/* עיצוב משודרג לכפתור הניווט העליון החדש */
 .back-btn { 
     margin-bottom: 1.5rem; color: var(--purp); cursor: pointer; font-size: 1.1rem; 
     font-style: italic; opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease;
@@ -112,10 +110,19 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .back-btn.reveal { opacity: 0.5; transform: translateY(0); }
 .back-btn:hover { opacity: 0.9; }
 
+/* אזור ה-Hover הגלובלי בתחתית העמוד */
 .vibe-info-trigger {
-    position: absolute; bottom: 0; left: 0; width: 100vw; height: 40px; z-index: 999; display: none;
+    position: absolute; bottom: 0; left: 0; width: 100vw; height: 50px; z-index: 999; display: none;
 }
 .vibe-info-trigger.active { display: block; }
+
+/* טקסט ה-about העדין שמזמין להתקרב */
+.about-label {
+    position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+    color: var(--purp); font-family: 'Instrument Serif'; font-style: italic;
+    font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease; pointer-events: none;
+}
+.vibe-info-trigger:hover .about-label { opacity: 0; } /* נעלם כשמתקרבים */
 
 .vibe-info-popup {
     position: absolute; bottom: 0; left: 0; width: 100vw;
@@ -220,6 +227,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   </div>
 
   <div class="vibe-info-trigger" id="vibeTrigger">
+      <div class="about-label">about</div>
       <div class="vibe-info-popup">
           <div class="vibe-info-text">
               Hey there. Every single track, album, and artist you encounter here comes straight from my personal library. No basic, mass-made recommendations—just a fine-tuned translation of your vibe into my actual musical taste. I really hope you enjoy wandering through my taste. Have a great listening :)
@@ -278,7 +286,6 @@ function skipIntro() {
     introTimers.forEach(clearTimeout);
     ['l1', 'l2', 'l3', 'l4'].forEach(id => document.getElementById(id).classList.add('visible'));
     
-    // העלמה מוחלטת של קבוצת הטקסטים מהמסך הראשון
     document.getElementById('textLinesGroup').classList.add('fade-out');
     document.getElementById('archPanel').classList.add('risen');
     document.getElementById('vibeTrigger').classList.add('active');
@@ -314,7 +321,6 @@ const MOOD_MAP = {
     'Random': { e: Math.random(), v: Math.random(), ac: Math.random(), loudness: -10 + Math.random()*7 }
 };
 
-// פונקציות הניווט העליון המבוקרות החדשות
 function triggerTopBack() {
     const active = ['prompt-selection', 'color-grid', 'shade-selection', 'mood-selection', 'result-container'].find(id => document.getElementById(id).style.display === 'flex');
     if (!active) return;
@@ -372,7 +378,7 @@ async function fetchCover(n, a) {
 function finishSearch() {
     const active = ['selection-container', 'prompt-selection', 'color-grid', 'shade-selection', 'mood-selection'].find(id => document.getElementById(id).style.display === 'flex');
     document.getElementById('mainTitle').innerText = "Analyzing your loop...";
-    updateBackBtnVisibility(false); // העלמת כפתור חזור בזמן האנליזה
+    updateBackBtnVisibility(false); 
     
     document.getElementById('result-cover').style.backgroundImage = 'none';
     document.getElementById('result-cover').innerText = ''; 
@@ -475,7 +481,7 @@ function finishSearch() {
         
         const cover = await fetchCover(name, artist);
         document.getElementById('vibe-loader').style.display = 'none';
-        updateBackBtnVisibility(true); // הצגת כפתור "start over" במיקום העליון
+        updateBackBtnVisibility(true); 
         
         const coverEl = document.getElementById('result-cover');
         if (cover) {
@@ -506,7 +512,7 @@ function fade(fromId, toId) {
     from.style.opacity = '0';
     setTimeout(() => {
         from.style.display = 'none'; to.style.display = 'flex';
-        to.querySelectorAll('.select-option, .divider, .color-circle, .shade-circle, .mood-item').forEach(el => el.classList.add('reveal'));
+        to.querySelectorAll('.select-option, .divider, .color-circle, .mood-item').forEach(el => el.classList.add('reveal'));
         setTimeout(() => to.style.opacity = '1', 50);
     }, 500);
 }
@@ -530,7 +536,7 @@ introTimers.push(setTimeout(() => {
 introTimers.push(setTimeout(() => { 
     if(!introSkipped) {
         introSkipped = true;
-        document.getElementById('textLinesGroup').classList.add('fade-out'); // העלמה חלק מה-Onboarding
+        document.getElementById('textLinesGroup').classList.add('fade-out'); 
         document.getElementById('archPanel').classList.add('risen'); 
         document.getElementById('vibeTrigger').classList.add('active');
         setTimeout(() => { 
