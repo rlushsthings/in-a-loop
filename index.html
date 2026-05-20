@@ -22,7 +22,11 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   position: absolute; inset: 0; z-index: 2;
   display: flex; flex-direction: column; justify-content: center;
   padding: 0 8vw; gap: 0.1rem; pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s ease; /* אפקט העלמה חלק */
 }
+/* קלאס להעלמת הטקסט המקורי לחלוטין כשהמסך השני עולה */
+.text-lines.fade-out { opacity: 0; transform: translateY(-20px); }
+
 .line {
   font-size: clamp(2rem, 5vw, 3.8rem);
   font-style: italic; line-height: 1.2; color: var(--night);
@@ -43,7 +47,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   z-index: 5;
   transition: transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding-top: 18vh;
+  padding-top: 14vh; /* כיוונון עדין למרחב העליון החדש */
 }
 .arch-panel.risen { transform: translateX(-50%) translateY(5vh); }
 
@@ -99,7 +103,14 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 #result-title { font-size: 2rem; font-style: italic; margin-bottom: 0.2rem; line-height: 1.1; }
 #result-artist { font-size: 1.2rem; opacity: 0.7; font-style: italic; }
 
-.back-btn { margin-top: 30px; color: var(--purp); cursor: pointer; font-size: 1.1rem; font-style: italic; opacity: 0.5; }
+/* עיצוב משודרג לכפתור הניווט העליון החדש */
+.back-btn { 
+    margin-bottom: 1.5rem; color: var(--purp); cursor: pointer; font-size: 1.1rem; 
+    font-style: italic; opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(10px);
+}
+.back-btn.reveal { opacity: 0.5; transform: translateY(0); }
+.back-btn:hover { opacity: 0.9; }
 
 .vibe-info-trigger {
     position: absolute; bottom: 0; left: 0; width: 100vw; height: 40px; z-index: 999; display: none;
@@ -138,7 +149,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 
 <div class="scene" onclick="skipIntro()">
   <div class="bg-warm"></div>
-  <div class="text-lines">
+  <div class="text-lines" id="textLinesGroup">
     <div class="line line-1" id="l1">Stuck in a loop?</div>
     <div class="line line-2" id="l2">Lost in your own playlist?</div>
     <div class="line line-3 from-right" id="l3">Your algorithm is tired.</div>
@@ -146,7 +157,10 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
   </div>
 
   <div class="arch-panel" id="archPanel" onclick="event.stopPropagation()">
+    <div class="back-btn" id="global-back-nav" onclick="triggerTopBack()">← back</div>
+    
     <h2 class="arch-title" id="mainTitle">What's the vibe today?</h2>
+    
     <div class="content-zone">
         <div id="selection-container">
             <button class="select-option loading" id="opt-song" onclick="goToPrompts('Song')">Song</button>
@@ -162,7 +176,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
             <button class="select-option" onclick="openMoodMenu()">Mood</button>
             <div class="divider"></div>
             <button class="select-option" onclick="applyMood('Random')">Random</button>
-            <div class="back-btn" onclick="backToStart()">← back</div>
         </div>
 
         <div id="mood-selection" style="display:none; opacity:0;">
@@ -180,7 +193,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
                 <button class="mood-item" onclick="applyMood('Erratic')">Erratic</button>
                 <button class="mood-item" onclick="applyMood('Melodic')">Melodic</button>
             </div>
-            <div class="back-btn" onclick="backToFilters()">← back</div>
         </div>
 
         <div id="color-grid" style="display:none; opacity:0;">
@@ -194,7 +206,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
                 <div class="color-circle" style="background: #A3CCFF;" onclick="openShades('#A3CCFF', 'blue')"></div>
                 <div class="color-circle" style="background: #C78AFF;" onclick="openShades('#C78AFF', 'purple')"></div>
             </div>
-            <div class="back-btn" onclick="backToFilters()">← back</div>
         </div>
 
         <div id="shade-selection" style="display:none; opacity:0;"><div class="shade-row" id="shadeRow"></div></div>
@@ -204,7 +215,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
         <div id="result-container">
             <div id="result-cover"></div>
             <div id="result-info"><div id="result-title"></div><div id="result-artist"></div></div>
-            <div class="back-btn" onclick="resetVibe()">← start over</div>
         </div>
     </div>
   </div>
@@ -225,22 +235,6 @@ let currentMapping = { e: 0.5, v: 0.5, ac: 0.5, loudness: -8, genre: "", female:
 let historyLog = []; 
 let introTimers = []; 
 let introSkipped = false;
-
-// מאגר תמונות גיבוי מובנה לאמנים מרכזיים
-const ARTIST_COVERS = {
-    "claudio monteverdi": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop",
-    "robert schumann": "https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=600&auto=format&fit=crop",
-    "miles davis": "https://images.unsplash.com/photo-1487180142328-0c4e37023af5?q=80&w=600&auto=format&fit=crop",
-    "john coltrane": "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=600&auto=format&fit=crop",
-    "radiohead": "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600&auto=format&fit=crop",
-    "the smiths": "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=600&auto=format&fit=crop",
-    "aphex twin": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop",
-    "brian eno": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=600&auto=format&fit=crop",
-    "david bowie": "https://images.unsplash.com/photo-1526478806334-5fa488a38b1d?q=80&w=600&auto=format&fit=crop",
-    "bjork": "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop",
-    "cocteau twins": "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop",
-    "sonic youth": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=600&auto=format&fit=crop"
-};
 
 const cursorEl = document.getElementById('customCursor');
 window.addEventListener('mousemove', (e) => {
@@ -283,6 +277,9 @@ function skipIntro() {
     introSkipped = true;
     introTimers.forEach(clearTimeout);
     ['l1', 'l2', 'l3', 'l4'].forEach(id => document.getElementById(id).classList.add('visible'));
+    
+    // העלמה מוחלטת של קבוצת הטקסטים מהמסך הראשון
+    document.getElementById('textLinesGroup').classList.add('fade-out');
     document.getElementById('archPanel').classList.add('risen');
     document.getElementById('vibeTrigger').classList.add('active');
 
@@ -317,7 +314,23 @@ const MOOD_MAP = {
     'Random': { e: Math.random(), v: Math.random(), ac: Math.random(), loudness: -10 + Math.random()*7 }
 };
 
-function goToPrompts(type) { currentSelection = type || "Song"; fade('selection-container', 'prompt-selection'); }
+// פונקציות הניווט העליון המבוקרות החדשות
+function triggerTopBack() {
+    const active = ['prompt-selection', 'color-grid', 'shade-selection', 'mood-selection', 'result-container'].find(id => document.getElementById(id).style.display === 'flex');
+    if (!active) return;
+    if (active === 'prompt-selection') backToStart();
+    else if (active === 'color-grid' || active === 'mood-selection') backToFilters();
+    else if (active === 'shade-selection') backToGrid();
+    else if (active === 'result-container') resetVibe();
+}
+
+function updateBackBtnVisibility(visible) {
+    const btn = document.getElementById('global-back-nav');
+    if (visible) btn.classList.add('reveal');
+    else btn.classList.remove('reveal');
+}
+
+function goToPrompts(type) { currentSelection = type || "Song"; fade('selection-container', 'prompt-selection'); updateBackBtnVisibility(true); }
 function openMoodMenu() { fade('prompt-selection', 'mood-selection'); document.getElementById('mainTitle').innerText = "How are we feeling?"; }
 function openColorGrid() { fade('prompt-selection', 'color-grid'); document.getElementById('mainTitle').innerText = "Choose a tone"; }
 
@@ -335,45 +348,31 @@ function openShades(hex, colorKey) {
 
 function applyMood(moodKey) { currentMapping = MOOD_MAP[moodKey]; finishSearch(); }
 
-// פונקציית העטיפות המתוקנת מהיסוד - פותרת לחלוטין את בעיית האמנים הריקים
 async function fetchCover(n, a) {
     const typeStr = currentSelection ? currentSelection.toLowerCase() : 'song';
-    
-    // בדיקה במאגר הגיבוי המקומי
-    if (typeStr === 'artist') {
-        const cleanArtistName = String(n).toLowerCase().trim();
-        if (ARTIST_COVERS[cleanArtistName]) return ARTIST_COVERS[cleanArtistName];
-    }
-
     try {
         let entityType = 'song';
         let termQuery = encodeURIComponent(`${n} ${a}`);
-        
         if (typeStr === 'album') {
             entityType = 'album';
         } else if (typeStr === 'artist') {
-            // התיקון הקריטי: אם זה אמן, המשתנה n הוא שם האמן (כי זה מה ששלחנו). 
-            // אנחנו מחפשים ישירות שירים (song) שלו כדי להביא עטיפה של היצירה שלו
             entityType = 'song';
             termQuery = encodeURIComponent(n); 
         }
-        
         const res = await fetch(`https://itunes.apple.com/search?term=${termQuery}&limit=1&entity=${entityType}`);
         const d = await res.json();
-        
         if (d.results && d.results[0]) {
             let url = d.results[0].artworkUrl100 || d.results[0].artworkUrl60;
             return url ? url.replace('100x100bb', '600x600bb').replace('60x60bb', '600x600bb') : null;
         }
-    } catch {
-        return null;
-    }
+    } catch { return null; }
     return null;
 }
 
 function finishSearch() {
     const active = ['selection-container', 'prompt-selection', 'color-grid', 'shade-selection', 'mood-selection'].find(id => document.getElementById(id).style.display === 'flex');
     document.getElementById('mainTitle').innerText = "Analyzing your loop...";
+    updateBackBtnVisibility(false); // העלמת כפתור חזור בזמן האנליזה
     
     document.getElementById('result-cover').style.backgroundImage = 'none';
     document.getElementById('result-cover').innerText = ''; 
@@ -471,13 +470,12 @@ function finishSearch() {
             return;
         }
 
-        // חילוץ נכון של המשתנים כדי למנוע ערכים ריקים בחיפוש האמנים
         const name = win["Track Name"] || win["Track name"] || win["Album"] || win["Artist name"];
         const artist = win["Artist Name(s)"] || win["Artist name"] || "";
         
-        // שליחת שם האמן כמשתנה הראשון אם מדובר בקטגוריית אמן
         const cover = await fetchCover(name, artist);
         document.getElementById('vibe-loader').style.display = 'none';
+        updateBackBtnVisibility(true); // הצגת כפתור "start over" במיקום העליון
         
         const coverEl = document.getElementById('result-cover');
         if (cover) {
@@ -508,24 +506,17 @@ function fade(fromId, toId) {
     from.style.opacity = '0';
     setTimeout(() => {
         from.style.display = 'none'; to.style.display = 'flex';
-        to.querySelectorAll('.select-option, .divider, .color-circle, .shade-circle, .back-btn, .mood-item').forEach(el => el.classList.add('reveal'));
+        to.querySelectorAll('.select-option, .divider, .color-circle, .shade-circle, .mood-item').forEach(el => el.classList.add('reveal'));
         setTimeout(() => to.style.opacity = '1', 50);
     }, 500);
 }
-function resetVibe() { fade('result-container', 'selection-container'); document.getElementById('mainTitle').innerText = "What's the vibe today?"; }
-function backToStart() { fade('prompt-selection', 'selection-container'); document.getElementById('mainTitle').innerText = "What's the vibe today?"; }
+function resetVibe() { fade('result-container', 'selection-container'); document.getElementById('mainTitle').innerText = "What's the vibe today?"; updateBackBtnVisibility(false); }
+function backToStart() { fade('prompt-selection', 'selection-container'); document.getElementById('mainTitle').innerText = "What's the vibe today?"; updateBackBtnVisibility(false); }
 function backToFilters() { const active = ['color-grid', 'mood-selection'].find(id => document.getElementById(id).style.display === 'flex'); fade(active, 'prompt-selection'); document.getElementById('mainTitle').innerText = "Navigate by..."; }
 function backToGrid() { fade('shade-selection', 'color-grid'); document.getElementById('mainTitle').innerText = "Choose a tone"; }
 
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const active = ['prompt-selection', 'color-grid', 'shade-selection', 'mood-selection', 'result-container'].find(id => document.getElementById(id).style.display === 'flex');
-        if (!active) return;
-        if (active === 'prompt-selection') backToStart();
-        else if (active === 'color-grid' || active === 'mood-selection') backToFilters();
-        else if (active === 'shade-selection') backToGrid();
-        else if (active === 'result-container') resetVibe();
-    }
+    if (e.key === 'Escape') triggerTopBack();
 });
 
 introTimers.push(setTimeout(() => { 
@@ -539,6 +530,7 @@ introTimers.push(setTimeout(() => {
 introTimers.push(setTimeout(() => { 
     if(!introSkipped) {
         introSkipped = true;
+        document.getElementById('textLinesGroup').classList.add('fade-out'); // העלמה חלק מה-Onboarding
         document.getElementById('archPanel').classList.add('risen'); 
         document.getElementById('vibeTrigger').classList.add('active');
         setTimeout(() => { 
