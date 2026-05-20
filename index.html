@@ -110,19 +110,19 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
 .back-btn.reveal { opacity: 0.5; transform: translateY(0); }
 .back-btn:hover { opacity: 0.9; }
 
-/* אזור ה-Hover הגלובלי בתחתית העמוד */
+/* אזור ה-Hover והלחיצה הגלובלי בתחתית העמוד */
 .vibe-info-trigger {
     position: absolute; bottom: 0; left: 0; width: 100vw; height: 50px; z-index: 999; display: none;
 }
 .vibe-info-trigger.active { display: block; }
 
-/* טקסט ה-about העדין שמזמין להתקרב */
 .about-label {
     position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
     color: var(--purp); font-family: 'Instrument Serif'; font-style: italic;
     font-size: 1.1rem; opacity: 0.3; transition: opacity 0.3s ease; pointer-events: none;
 }
-.vibe-info-trigger:hover .about-label { opacity: 0; } /* נעלם כשמתקרבים */
+/* הסתרת הלייבל במצב פתוח (עבור מובייל ודסקטופ) */
+.vibe-info-trigger.open .about-label { opacity: 0; }
 
 .vibe-info-popup {
     position: absolute; bottom: 0; left: 0; width: 100vw;
@@ -131,11 +131,23 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
     border-top: 1px solid rgba(147, 165, 255, 0.15);
     color: var(--purp); text-align: center; font-style: italic; 
     font-size: 1.5rem; line-height: 1.45;
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); pointer-events: none; z-index: 1000;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); pointer-events: auto; z-index: 1000;
 }
 .vibe-info-text { max-width: 800px; margin: 0 auto; }
 
-.vibe-info-trigger:hover .vibe-info-popup { transform: translateY(0); }
+/* תמיכה במצב פתוח מבוסס קלאס (בלחיצה בנייד או Hover בדסקטופ) */
+.vibe-info-trigger:hover .vibe-info-popup, .vibe-info-trigger.open .vibe-info-popup { transform: translateY(0); }
+.vibe-info-trigger:hover .about-label { opacity: 0; }
+
+/* התאמת רספונסיביות למובייל ומסכי מגע */
+@media (max-width: 768px) {
+    html, body { cursor: default; } /* החזרת סמן רגיל בניידים למניעת באגים */
+    .custom-cursor { display: none; } /* העלמת עיגול העכבר בניידים */
+    .vibe-info-popup {
+        padding: 2.2rem 1.8rem; /* הקטנת ה-padding בניידים כדי שינשום */
+        font-size: 1.2rem; /* פונט מעט קטן יותר למניעת חריגות גובה */
+    }
+}
 
 .custom-cursor {
     position: fixed; width: 12px; height: 12px;
@@ -181,7 +193,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
             <button class="select-option" onclick="openColorGrid()">Color</button>
             <div class="divider"></div>
             <button class="select-option" onclick="openMoodMenu()">Mood</button>
-            <div class="divider"></div>
+            <div class="divider =="></div>
             <button class="select-option" onclick="applyMood('Random')">Random</button>
         </div>
 
@@ -226,7 +238,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Instrument Serif', Ge
     </div>
   </div>
 
-  <div class="vibe-info-trigger" id="vibeTrigger">
+  <div class="vibe-info-trigger" id="vibeTrigger" onclick="toggleMobileAbout(event)">
       <div class="about-label">about</div>
       <div class="vibe-info-popup">
           <div class="vibe-info-text">
@@ -243,6 +255,18 @@ let currentMapping = { e: 0.5, v: 0.5, ac: 0.5, loudness: -8, genre: "", female:
 let historyLog = []; 
 let introTimers = []; 
 let introSkipped = false;
+
+// פונקציית הטוגל החדשה התומכת בלחיצה חלקה במובייל וסגירה בלחיצה חוזרת
+function toggleMobileAbout(event) {
+    event.stopPropagation();
+    const trigger = document.getElementById('vibeTrigger');
+    trigger.classList.toggle('open');
+}
+
+// סגירה שקטה של המגירה אם המשתמש מקליק במקום אחר על המסך
+window.addEventListener('click', () => {
+    document.getElementById('vibeTrigger').classList.remove('open');
+});
 
 const cursorEl = document.getElementById('customCursor');
 window.addEventListener('mousemove', (e) => {
